@@ -1,10 +1,10 @@
 #include "../include/main.h"
 #include "../include/main-private.h"
-#include <memory.h>
+#include "../include/memory.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <sys/types.h>
 
 void verify_condition(int condition, char* snippet_id, char* error_msg) {
     if (condition) {
@@ -77,6 +77,25 @@ void create_shared_memory_buffers(struct main_data *data, struct comm_buffers *b
     );
 }
 
+void launch_processes(struct comm_buffers* buffers, struct main_data* data) {
+    srand(time(NULL));
+    int base_id = rand();
+    int pid;
+    for (int i = 0; i < data->n_clients; i++) {
+        pid = launch_client(base_id + i, buffers, data);
+    }
+
+    base_id = rand();
+    for (int i = 0; i < data->n_intermediaries; i++) {
+        pid = launch_interm(base_id + i, buffers, data);
+    }
+
+    base_id = rand();
+    for (int i = 0; i < data->n_enterprises; i++) {
+        pid = launch_enterp(base_id + i, buffers, data);
+    }
+}
+
 int main(int argc, char *argv[]) {
     //init data structures
     struct main_data* data = create_dynamic_memory(sizeof(struct main_data));
@@ -122,6 +141,17 @@ int main(int argc, char *argv[]) {
     //user_interaction(buffers, data);
     
     //release memory before terminating
+    // first shared memory
+    destroy_shared_memory(STR_SHM_MAIN_CLIENT_PTR, buffers->main_client->ptrs, data->buffers_size);
+    destroy_shared_memory(STR_SHM_MAIN_CLIENT_BUFFER, buffers->main_client->buffer, data->buffers_size);
+    destroy_shared_memory(STR_SHM_CLIENT_INTERM_PTR, buffers->client_interm->ptrs, data->buffers_size);
+    destroy_shared_memory(STR_SHM_CLIENT_INTERM_BUFFER, buffers->client_interm->buffer, data->buffers_size);
+    destroy_shared_memory(STR_SHM_INTERM_ENTERP_BUFFER, buffers->interm_enterp->buffer, data->buffers_size);
+    destroy_shared_memory(STR_SHM_INTERM_ENTERP_PTR, buffers->interm_enterp->ptrs, data->buffers_size);
+    destroy_shared_memory(STR_SHM_RESULTS, data->results, data->buffers_size);
+    destroy_shared_memory(STR_SHM_TERMINATE, data->terminate, data->buffers_size);
+
+    // then dynamic memory
     destroy_dynamic_memory(data);
     destroy_dynamic_memory(buffers->main_client);
     destroy_dynamic_memory(buffers->client_interm);
