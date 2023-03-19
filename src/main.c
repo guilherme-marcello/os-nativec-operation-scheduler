@@ -80,7 +80,7 @@ void create_shared_memory_buffers(struct main_data *data, struct comm_buffers *b
     );
 }
 
-void launch_process(struct comm_buffers* buffers, struct main_data* data, int* pids, int n, int (*launch_func)(int, struct comm_buffers*, struct main_data*)) {
+void launch_process(struct comm_buffers* buffers, struct main_data* data, int* pids, int n, LaunchFunc launch_func) {
     srand(time(NULL));
     // set a random base_id
     int base_id = rand();
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
         ERROR_MALLOC
     );
 
-    launch_processes(buffers, data);
+    //launch_processes(buffers, data);
     //user_interaction(buffers, data);
     
     //release memory before terminating
