@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <time.h>
+#include "../include/process.h"
+
 
 void verify_condition(int condition, char* snippet_id, char* error_msg) {
     if (condition) {
@@ -38,61 +41,65 @@ void create_shared_memory_buffers(struct main_data *data, struct comm_buffers *b
     // comm buffers
     buffers->main_client->ptrs = create_shared_memory(
         STR_SHM_MAIN_CLIENT_PTR, 
-        data->buffers_size
+        data->buffers_size * sizeof(int)
     );
 
     buffers->main_client->buffer = create_shared_memory(
         STR_SHM_MAIN_CLIENT_BUFFER, 
-        data->buffers_size
+        data->buffers_size * sizeof(struct operation)
     );
 
     buffers->client_interm->ptrs = create_shared_memory(
         STR_SHM_CLIENT_INTERM_PTR, 
-        data->buffers_size
+        data->buffers_size * sizeof(struct pointers)
     );
 
     buffers->client_interm->buffer = create_shared_memory(
         STR_SHM_CLIENT_INTERM_BUFFER, 
-        data->buffers_size
+        data->buffers_size * sizeof(struct operation)
     );
 
     buffers->interm_enterp->ptrs = create_shared_memory(
         STR_SHM_INTERM_ENTERP_PTR, 
-        data->buffers_size
+        data->buffers_size * sizeof(int)
     );
 
     buffers->interm_enterp->buffer = create_shared_memory(
         STR_SHM_INTERM_ENTERP_BUFFER, 
-        data->buffers_size
+        data->buffers_size * sizeof(struct operation)
     );
 
     // main_data-related fields
     data->results = create_shared_memory(
         STR_SHM_RESULTS, 
-        min(data->buffers_size, sizeof(struct operation) * MAX_RESULTS)
+        sizeof(struct operation) * MAX_RESULTS
     ); 
     data->terminate = create_shared_memory(
         STR_SHM_TERMINATE, 
-        min(data->buffers_size, sizeof(int))
+        sizeof(int)
     );
 }
 
 void launch_processes(struct comm_buffers* buffers, struct main_data* data) {
     srand(time(NULL));
-    int base_id = rand();
+
     int pid;
+    int base_id = rand();
     for (int i = 0; i < data->n_clients; i++) {
         pid = launch_client(base_id + i, buffers, data);
+        data->client_pids[i] = pid;
     }
 
     base_id = rand();
     for (int i = 0; i < data->n_intermediaries; i++) {
         pid = launch_interm(base_id + i, buffers, data);
+        data->intermediary_pids[i] = pid;
     }
 
     base_id = rand();
     for (int i = 0; i < data->n_enterprises; i++) {
         pid = launch_enterp(base_id + i, buffers, data);
+        data->enterprise_pids[i] = pid;
     }
 }
 
