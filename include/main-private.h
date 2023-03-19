@@ -1,3 +1,6 @@
+// type LaunchFunc representa um ponteiro para uma funcao de launch de processos
+typedef int (*LaunchFunc)(int, struct comm_buffers*, struct main_data*);
+
 /* Função que verifica se a condicao condition se verifica e,
 se for o caso, lanca uma excecao com a mensagem error_msg. 
 Indica na excecao o "snippet_id" associado ao erro.
@@ -6,6 +9,12 @@ void verify_condition(int condition, char* snippet_id, char* error_msg);
 
 /* Funcao que devolve o menor inteiro passado como argumento. */
 int min(int a, int b);
+
+/* Funcao que lanca um processo, dado os buffers de comunicacao, 
+os dados da main, a lista de pids a ser alterada, o numero de processos
+a serem lancados e uma funcao para lancar esses processos.
+*/
+void launch_process(struct comm_buffers* buffers, struct main_data* data, int* pids, int n, LaunchFunc launch_func);
 
 #define NUMBER_OF_ARGS 6
 #define FLAGS_OPTIONS "help menu: -h\n"
