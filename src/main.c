@@ -80,27 +80,20 @@ void create_shared_memory_buffers(struct main_data *data, struct comm_buffers *b
     );
 }
 
-void launch_processes(struct comm_buffers* buffers, struct main_data* data) {
+void launch_process(struct comm_buffers* buffers, struct main_data* data, int* pids, int n, int (*launch_func)(int, struct comm_buffers*, struct main_data*)) {
     srand(time(NULL));
-
-    int pid;
+    // set a random base_id
     int base_id = rand();
-    for (int i = 0; i < data->n_clients; i++) {
-        pid = launch_client(base_id + i, buffers, data);
-        data->client_pids[i] = pid;
-    }
+    // for each process to launch, use base id as "root id" and save its pid
+    for (int i = 0; i < n; i++)
+        pids[i] = launch_func(base_id + i, buffers, data);
+}
 
-    base_id = rand();
-    for (int i = 0; i < data->n_intermediaries; i++) {
-        pid = launch_interm(base_id + i, buffers, data);
-        data->intermediary_pids[i] = pid;
-    }
 
-    base_id = rand();
-    for (int i = 0; i < data->n_enterprises; i++) {
-        pid = launch_enterp(base_id + i, buffers, data);
-        data->enterprise_pids[i] = pid;
-    }
+void launch_processes(struct comm_buffers* buffers, struct main_data* data) {
+    launch_process(buffers, data, data->client_pids, data->n_clients, launch_client);
+    launch_process(buffers, data, data->intermediary_pids, data->n_intermediaries, launch_interm);
+    launch_process(buffers, data, data->enterprise_pids, data->n_enterprises, launch_enterp);
 }
 
 int main(int argc, char *argv[]) {
@@ -144,7 +137,7 @@ int main(int argc, char *argv[]) {
         ERROR_MALLOC
     );
 
-    //launch_processes(buffers, data);
+    launch_processes(buffers, data);
     //user_interaction(buffers, data);
     
     //release memory before terminating
