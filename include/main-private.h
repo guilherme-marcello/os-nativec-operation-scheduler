@@ -1,3 +1,9 @@
+#ifndef MAIN_PRIVATE_H_GUARD
+#define MAIN_PRIVATE_H_GUARD
+
+#include "main.h"
+
+
 // type LaunchFunc representa um ponteiro para uma funcao de launch de processos
 typedef int (*LaunchFunc)(int, struct comm_buffers*, struct main_data*);
 
@@ -5,7 +11,8 @@ typedef int (*LaunchFunc)(int, struct comm_buffers*, struct main_data*);
 se for o caso, lanca uma excecao com a mensagem error_msg. 
 Indica na excecao o "snippet_id" associado ao erro.
 */
-void verify_condition(int condition, char* snippet_id, char* error_msg);
+void verify_condition(int condition, char* snippet_id, char* error_msg, int status);
+
 
 /* Funcao que devolve o menor inteiro passado como argumento. */
 int min(int a, int b);
@@ -31,3 +38,5 @@ void launch_process(struct comm_buffers* buffers, struct main_data* data, int* p
 #define INIT_MAIN "Init main Args"
 #define INIT_DMEM_BUFFERS "Init dmem buffers"
 #define INIT_SHMEM_BUFFERS "Init shmem buffers"
+
+#endif
