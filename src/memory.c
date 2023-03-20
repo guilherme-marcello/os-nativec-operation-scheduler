@@ -1,5 +1,6 @@
 #include "../include/memory.h"
 #include "../include/memory-private.h"
+#include "../include/main-private.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,44 +26,50 @@ void destroy_shared_memory(char * name, void * ptr, int size) {
     char name_uid[strlen(name)+10];
     sprintf(name_uid,"%s_%d", name, uid);
 
-    int ret;
-    ret = munmap(ptr, size); 
-    if(ret == -1){ 
-        perror(name); 
-        exit(7); 
-    } 
-    ret = shm_unlink(name); 
-    if(ret == -1){ 
-        perror(name); 
-        exit(8); 
-    }
+    verify_condition(
+        munmap(ptr, size) == -1,
+        name,
+        ERROR_SHM_UNMAP, 
+        EXIT_MUNMAP_ERROR
+    );
+
+    verify_condition(
+        shm_unlink(name) == -1,
+        name,
+        ERROR_SHM_UNLINK, 
+        EXIT_SHM_UNLINK_ERROR
+    );
 }
 
-void * create_shared_memory(char* name, int size) {
-    int uid = getuid();
+void* create_shared_memory(char* name, int size) {
+    uid_t uid = getuid();
     char name_uid[strlen(name)+10];
     sprintf(name_uid,"%s_%d", name, uid);
-
-    int *ptr; 
- 	int ret; 
- 	int fd = shm_open(name, O_RDWR|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR); 
- 	if(fd ==-1){ 
- 		perror(name); 
- 		return NULL;
- 	} 
  
- 	ret = ftruncate(fd,size); 
- 	if (ret==-1){ 
- 		perror(name); 
- 		return NULL;
- 	} 
- 	ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); 
- 	if (ptr == MAP_FAILED){ 
- 		perror(name); 
- 		return NULL;
- 	} 
-	return ptr;
+    int fd = shm_open(name, O_RDWR|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR); 
+    verify_condition(
+        fd == -1, 
+        name, 
+        ERROR_SHM_OPEN,
+        EXIT_FAILURE
+    );
 
+    verify_condition(
+        ftruncate(fd, size) == -1, 
+        name, 
+        ERROR_SHM_TRUNCATE,
+        EXIT_FAILURE
+    );
+
+    int *shmem_ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); 
+    verify_condition(
+        shmem_ptr == MAP_FAILED, 
+        name, 
+        ERROR_SHM_MAP,
+        EXIT_FAILURE
+    );
+
+    return shmem_ptr;
 }
 
 void write_main_client_buffer(struct rnd_access_buffer* buffer, int buffer_size, struct operation* op) {
