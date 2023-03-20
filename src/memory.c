@@ -8,6 +8,9 @@
 #include <sys/msg.h>
 #include <unistd.h>
 #include <sys/shm.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 void* create_dynamic_memory(int size) {
     return calloc(1, size);
@@ -17,33 +20,49 @@ void destroy_dynamic_memory(void* ptr) {
     free(ptr);
 }
 
-void destroy_shared_memory(char* name, void* ptr, int size) {
-    // generate access key
-    key_t access_key = ftok(name, 'R');
-    // get the id of the shm segment
-    int shmid = shmget(access_key, size, 0666);
-    // detach shmem
-    shmdt(ptr);
-    // remove shmem
-    shmctl(shmid, IPC_RMID, NULL);
+void destroy_shared_memory(char * name, void * ptr, int size) {
+    int uid = getuid();
+    char name_uid[strlen(name)+10];
+    sprintf(name_uid,"%s_%d", name, uid);
+
+    int ret;
+    ret = munmap(ptr, size); 
+    if(ret == -1){ 
+        perror(name); 
+        exit(7); 
+    } 
+    ret = shm_unlink(name); 
+    if(ret == -1){ 
+        perror(name); 
+        exit(8); 
+    }
 }
 
-void* create_shared_memory(char* name, int size) {
-    // generate access key as namekey concatenation
-    //uid_t uid = getuid();
-    //char key_as_string[64];
-    //sprintf(key_as_string, "%s%d", name, uid);
-    key_t access_key = ftok(name, 'R');
+void * create_shared_memory(char* name, int size) {
+    int uid = getuid();
+    char name_uid[strlen(name)+10];
+    sprintf(name_uid,"%s_%d", name, uid);
 
-    // get the id of the shm segment
-    int shmid = shmget(access_key, size, 0666|IPC_CREAT);
-    // attach to the shm segment, getting a pointer
-    void* ptr = shmat(shmid, NULL, 0);
-    // fill segment with 0
-    memset(ptr, 0, size);
-    // detach and return pointer
-    shmdt(ptr);
-    return ptr;
+    int *ptr; 
+ 	int ret; 
+ 	int fd = shm_open(name, O_RDWR|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR); 
+ 	if(fd ==-1){ 
+ 		perror(name); 
+ 		return NULL;
+ 	} 
+ 
+ 	ret = ftruncate(fd,size); 
+ 	if (ret==-1){ 
+ 		perror(name); 
+ 		return NULL;
+ 	} 
+ 	ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); 
+ 	if (ptr == MAP_FAILED){ 
+ 		perror(name); 
+ 		return NULL;
+ 	} 
+	return ptr;
+
 }
 
 void write_main_client_buffer(struct rnd_access_buffer* buffer, int buffer_size, struct operation* op) {
@@ -100,4 +119,12 @@ void read_interm_enterp_buffer(struct rnd_access_buffer* buffer, int enterp_id, 
     }
     // no op available
     op->id = -1;
+}
+
+void write_client_interm_buffer(struct circular_buffer* buffer, int buffer_size, struct operation* op) {
+
+}
+
+void read_client_interm_buffer(struct circular_buffer* buffer, int buffer_size, struct operation* op) {
+
 }
