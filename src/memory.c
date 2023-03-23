@@ -72,7 +72,7 @@ void* create_shared_memory(char* name, int size) {
     return shmem_ptr;
 }
 
-void write_main_client_buffer(struct rnd_access_buffer* buffer, int buffer_size, struct operation* op) {
+void write_operation_to_rnd_access_buffer(struct rnd_access_buffer* buffer, int buffer_size, struct operation* op) {
     for (int i = 0; i < buffer_size; i++) {
         // check if the ith position in the buffer is free
         if (buffer->ptrs[i] == FREE_MEM) {
@@ -81,7 +81,15 @@ void write_main_client_buffer(struct rnd_access_buffer* buffer, int buffer_size,
             buffer->ptrs[i] = USED_MEM;
             return; // exit the function
         }
-    }
+    }   
+}
+
+void write_main_client_buffer(struct rnd_access_buffer* buffer, int buffer_size, struct operation* op) {
+    write_operation_to_rnd_access_buffer(buffer, buffer_size, op);
+}
+
+void write_interm_enterp_buffer(struct rnd_access_buffer* buffer, int buffer_size, struct operation* op) {
+    write_operation_to_rnd_access_buffer(buffer, buffer_size, op);  
 }
 
 void read_main_client_buffer(struct rnd_access_buffer* buffer, int client_id, int buffer_size, struct operation* op) {
@@ -98,18 +106,6 @@ void read_main_client_buffer(struct rnd_access_buffer* buffer, int client_id, in
     }
     // no op available
     op->id = -1;
-}
-
-void write_interm_enterp_buffer(struct rnd_access_buffer* buffer, int buffer_size, struct operation* op) {
-    for (int i = 0; i < buffer_size; i++) {
-        // check if the ith position in the buffer is free
-        if (buffer->ptrs[i] == FREE_MEM) {
-            // write the operation to the buffer and update pointer to 1 (used)
-            buffer->buffer[i] = *op;
-            buffer->ptrs[i] = USED_MEM;
-            return; // exit the function
-        }
-    }    
 }
 
 void read_interm_enterp_buffer(struct rnd_access_buffer* buffer, int enterp_id, int buffer_size, struct operation* op) {
