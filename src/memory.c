@@ -129,9 +129,28 @@ void read_interm_enterp_buffer(struct rnd_access_buffer* buffer, int enterp_id, 
 }
 
 void write_client_interm_buffer(struct circular_buffer* buffer, int buffer_size, struct operation* op) {
+    // increase index for next read
+    int next_index = (buffer->ptrs->in + 1) % buffer_size;
 
+    // return if buffer is full
+    if (next_index == buffer->ptrs->out)
+        return;
+
+    // write the operation to the buffer at the next available index
+    buffer->buffer[buffer->ptrs->in] = *op;
+
+    // update the write pointer to the next available index
+    buffer->ptrs->in = next_index;
 }
 
 void read_client_interm_buffer(struct circular_buffer* buffer, int buffer_size, struct operation* op) {
-
+    // return if the buffer is empty, setting op id to -1
+    if (buffer->ptrs->in == buffer->ptrs->out) {
+        op->id = -1;
+        return;
+    }
+    // read the operation from the buffer
+    *op = buffer->buffer[buffer->ptrs->out];
+    // update the out pointer if reading was successful
+    buffer->ptrs->out = (buffer->ptrs->out + 1) % buffer_size;
 }
