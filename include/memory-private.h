@@ -4,6 +4,9 @@
 #define FREE_MEM 0
 #define USED_MEM 1
 
+// Funcao que escreve uma dada operacao em um dado buffer de tamanho buffer_size
+void write_operation_to_rnd_access_buffer(struct rnd_access_buffer* buffer, int buffer_size, struct operation* op);
+
 // Error handling constants
 #define ERROR_SHM_OPEN "Error: Failed to open shared memory region.\n"
 #define ERROR_SHM_TRUNCATE "Error: Failed to truncate shared memory region.\n"
