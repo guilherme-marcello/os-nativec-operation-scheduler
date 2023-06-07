@@ -1,6 +1,13 @@
-#include "../include/memory.h"
-#include "../include/memory-private.h"
-#include "../include/main-private.h"
+/**
+ * SO-035
+ * Guilherme Marcelo    <fc58173>
+ * Eduardo Santos       <fc58185>
+ * Xi Wang              <fc58183>
+*/
+
+#include "memory.h"
+#include "memory-private.h"
+#include "main-private.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,7 +48,7 @@ void destroy_shared_memory(char * name, void * ptr, int size) {
     );
 }
 
-void* create_shared_memory(char* name, int size) {
+void* create_shared_memory(char *name, int size) {
     uid_t uid = getuid();
     char name_uid[strlen(name)+10];
     sprintf(name_uid,"%s_%d", name, uid);
@@ -51,14 +58,14 @@ void* create_shared_memory(char* name, int size) {
         fd == -1, 
         name, 
         ERROR_SHM_OPEN,
-        EXIT_FAILURE
+        EXIT_SHM_OPEN_ERROR
     );
 
     verify_condition(
         ftruncate(fd, size) == -1, 
         name, 
         ERROR_SHM_TRUNCATE,
-        EXIT_FAILURE
+        EXIT_SHM_TRUNCATE_ERROR
     );
 
     int *shmem_ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); 
@@ -66,7 +73,7 @@ void* create_shared_memory(char* name, int size) {
         shmem_ptr == MAP_FAILED, 
         name, 
         ERROR_SHM_MAP,
-        EXIT_FAILURE
+        EXIT_SHM_MAP_ERROR
     );
 
     return shmem_ptr;
@@ -98,7 +105,7 @@ void read_main_client_buffer(struct rnd_access_buffer* buffer, int client_id, in
         if (buffer->ptrs[i] == USED_MEM) {
             if (buffer->buffer[i].requesting_client == client_id) {
                 // point op to buffered op and update ith position to free
-                op = &buffer->buffer[i];
+                *op = buffer->buffer[i];
                 buffer->ptrs[i] = FREE_MEM;
                 return; // exit the function
             }
@@ -114,7 +121,7 @@ void read_interm_enterp_buffer(struct rnd_access_buffer* buffer, int enterp_id, 
         if (buffer->ptrs[i] == USED_MEM) {
             if (buffer->buffer[i].requested_enterp == enterp_id) {
                 // point op to buffered op and update ith position to free
-                op = &buffer->buffer[i];
+                *op = buffer->buffer[i];
                 buffer->ptrs[i] = FREE_MEM;
                 return; // exit the function
             }

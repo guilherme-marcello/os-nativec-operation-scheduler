@@ -1,12 +1,20 @@
+/**
+ * SO-035
+ * Guilherme Marcelo    <fc58173>
+ * Eduardo Santos       <fc58185>
+ * Xi Wang              <fc58183>
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include "../include/process.h"
-#include "../include/client.h"
-#include "../include/enterprise.h"
+#include "process.h"
+#include "client.h"
+#include "intermediary.h"
+#include "enterprise.h"
 
 int launch_client(int client_id, struct comm_buffers* buffers, struct main_data* data) {
     pid_t pid = fork();
